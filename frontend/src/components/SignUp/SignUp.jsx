@@ -3,13 +3,54 @@ import { Link } from "react-router-dom";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { RxAvatar } from "react-icons/rx";
 import styles from "../../styles/styles";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { server } from "../../server";
 
 const SignUp = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [visible, setVisible] = useState(false); // ✅ boolean
+  const [visible, setVisible] = useState(false);
   const [avatar, setAvatar] = useState(null);
+
+  // Handle file selection
+  const handleFileInputChange = (e) => {
+    const file = e.target.files[0];
+    setAvatar(file);
+  };
+
+  // Form submission
+  const submitFormHandler = async (e) => {
+    e.preventDefault();
+
+    const myForm = new FormData();
+    myForm.append("name", name);
+    myForm.append("email", email);
+    myForm.append("password", password);
+    myForm.append("file", avatar);
+
+    const uri = `${server}/user/create-user`;
+
+    try {
+      const response = await axios.post(uri, myForm, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Reset form
+      setName("");
+      setEmail("");
+      setPassword("");
+      setAvatar(null);
+
+      toast.success(response.data.message);
+    } catch (error) {
+      // Safe error handling
+      toast.error(error.response?.data?.message || "Something went wrong. Please try again.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -24,6 +65,7 @@ const SignUp = () => {
             className="space-y-6"
             method="post"
             encType="multipart/form-data"
+            onSubmit={submitFormHandler}
           >
             {/* Name */}
             <div className="block text-sm font-medium text-gray-700">
@@ -101,7 +143,7 @@ const SignUp = () => {
                 <span className="inline-block h-8 w-8 rounded-full overflow-hidden">
                   {avatar ? (
                     <img
-                      src={avatar}
+                      src={URL.createObjectURL(avatar)}
                       alt="avatar"
                       className="h-full w-full object-cover rounded-full"
                     />
@@ -121,7 +163,7 @@ const SignUp = () => {
                     id="file-input"
                     accept=".jpg,.jpeg,.png"
                     className="sr-only"
-                    onChange={(e) => setAvatar(URL.createObjectURL(e.target.files[0]))} // ✅ preview
+                    onChange={handleFileInputChange}
                   />
                 </label>
               </div>
